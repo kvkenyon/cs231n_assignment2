@@ -306,6 +306,9 @@ class FullyConnectedNet(object):
             if not layer == last_layer:
                 out, cache = affine_relu_forward(out, weights, bias)
                 caches[w_key] = cache
+                if self.use_dropout:
+                    out, cache = dropout_forward(out, self.dropout_param)
+                    caches[f'dropout{layer}'] = cache
             else:
                 out, cache = affine_forward(out, weights, bias)
                 caches[w_key] = cache
@@ -350,7 +353,12 @@ class FullyConnectedNet(object):
                 loss_layer = False
                 dout, dW, db = affine_backward(dout, cache)
             else:
-                dout, dW, db = affine_relu_backward(dout, cache)
+                if self.use_dropout:
+                    cache_do = caches[f'dropout{layer}']
+                    dout = dropout_backward(dout, cache_do)
+                fc_cache, relu_cache = cache
+                da = relu_backward(dout, relu_cache)
+                dout, dW, db = affine_backward(da, fc_cache)
 
             W = self.params[w_key]
             grads[w_key] = dW + (self.reg * W)

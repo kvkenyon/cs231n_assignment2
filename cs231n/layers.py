@@ -662,11 +662,9 @@ def conv_forward_naive(x, w, b, conv_param):
                         
                     receptive_field = padded_image[0:C, start_h:start_h + filter_h, start_w:start_w + filter_w]
                     score = np.sum(receptive_field * f) + bias
-                    print(score)
                     out = np.append(out, score) 
             
     out = out.reshape((N, F, int(H_out), int(W_out)))
-    print(out)
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #

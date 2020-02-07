@@ -692,8 +692,59 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, w, b, conv_param = cache
+        
+    pad = conv_param['pad']
+    stride = conv_param['stride']
+    
+    # N images HxWxC
+    # F filters HHxWWxC
+    
+    F, C, HH, WW = w.shape
+    N, C, H, W = x.shape
 
+    H_out = 1 + (H + 2 * pad - HH) / stride
+    W_out = 1 + (W + 2 * pad - WW) / stride
+
+    db = np.ones(F)
+    dw = np.zeros(w.shape)
+    dx = np.zeros(x.shape)
+    
+    i = 0
+    for image in x:
+        dout_flat = np.reshape(dout[i], F * int(H_out) * int(W_out))
+        i += 1
+        padded_image = np.zeros((C, H + 2 * pad, W + 2 * pad))
+        for i in range(0, C):
+            image_channel = image[i]
+            image_channel = np.pad(image_channel, pad)
+            padded_image[i] = image_channel
+                    
+        image_c, image_h, image_w = padded_image.shape
+        filter_idx = 0
+        
+        out_idx = 0
+        for f in w: 
+            filter_c, filter_h, filter_w = f.shape
+                        
+            for start_h in range(0, image_h, stride):
+                if start_h + filter_h > image_h:
+                    continue
+
+                for start_w in range(0, image_w, stride):
+                    
+                    if start_w + filter_w > image_w:
+                        continue
+    
+                    receptive_field = padded_image[0:C, start_h:start_h + filter_h, start_w:start_w + filter_w]
+                            
+                    dw[filter_idx] += receptive_field * dout_flat[out_idx]
+                    
+                    out_idx += 1
+                    
+            filter_idx += 1
+
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #

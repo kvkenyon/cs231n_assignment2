@@ -80,7 +80,7 @@ def affine_backward(dout, cache):
     _, M = w.shape
     
     dx = dout.dot(w.T)
-    dw = X.T.dot(dout) # NxM x DxN -> DxM
+    dw = X.T.dot(dout) # DxN (X.T) x NxM  -> DxM
     db = dout.T.dot(np.ones(N, order='F'))
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -702,47 +702,23 @@ def conv_backward_naive(dout, cache):
     
     F, C, HH, WW = w.shape
     N, C, H, W = x.shape
-
+    print(x.shape)
     H_out = 1 + (H + 2 * pad - HH) / stride
     W_out = 1 + (W + 2 * pad - WW) / stride
 
-    db = np.ones(F)
+    db = dout.reshape((N,F,int(H_out * W_out))).dot(np.ones(int(H_out * W_out)));        
+    db = np.sum(db, axis=0)
+    
     dw = np.zeros(w.shape)
+    
+    x_pad = x.reshape((N * C, H, W))
+    x_pad = np.pad(x_pad, pad)[1:-1,:,:]
+    
+    x_pad = x_pad.reshape((N , C , (H + 2 * pad) , (W + 2 * pad)))
+    print(x_pad.shape)
+    print(w.shape)
     dx = np.zeros(x.shape)
     
-    i = 0
-    for image in x:
-        dout_flat = np.reshape(dout[i], F * int(H_out) * int(W_out))
-        i += 1
-        padded_image = np.zeros((C, H + 2 * pad, W + 2 * pad))
-        for i in range(0, C):
-            image_channel = image[i]
-            image_channel = np.pad(image_channel, pad)
-            padded_image[i] = image_channel
-                    
-        image_c, image_h, image_w = padded_image.shape
-        filter_idx = 0
-        
-        out_idx = 0
-        for f in w: 
-            filter_c, filter_h, filter_w = f.shape
-                        
-            for start_h in range(0, image_h, stride):
-                if start_h + filter_h > image_h:
-                    continue
-
-                for start_w in range(0, image_w, stride):
-                    
-                    if start_w + filter_w > image_w:
-                        continue
-    
-                    receptive_field = padded_image[0:C, start_h:start_h + filter_h, start_w:start_w + filter_w]
-                            
-                    dw[filter_idx] += receptive_field * dout_flat[out_idx]
-                    
-                    out_idx += 1
-                    
-            filter_idx += 1
 
     
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
